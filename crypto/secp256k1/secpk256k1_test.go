@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto"
-	cryptoAmino "github.com/tendermint/tendermint/crypto/amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
@@ -45,12 +44,6 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 		assert.Equal(t, pub, pubB, "Expected pub keys to match")
 		assert.Equal(t, addr, addrB, "Expected addresses to match")
 	}
-}
-
-func TestPubKeyInvalidDataProperReturnsEmpty(t *testing.T) {
-	pk, err := cryptoAmino.PubKeyFromBytes([]byte("foo"))
-	require.NotNil(t, err, "expecting a non-nil error")
-	require.Nil(t, pk, "expecting an empty public key on error")
 }
 
 func TestSignAndValidateSecp256k1(t *testing.T) {
