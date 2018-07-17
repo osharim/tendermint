@@ -10,7 +10,7 @@ import (
 	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tmlibs/common"
+	"github.com/tendermint/tendermint/libs/common"
 )
 
 //-------------------------------------

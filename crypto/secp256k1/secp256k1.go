@@ -9,7 +9,7 @@ import (
 	secp256k1 "github.com/btcsuite/btcd/btcec"
 	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tmlibs/common"
+	"github.com/tendermint/tendermint/libs/common"
 	"golang.org/x/crypto/ripemd160"
 )
 
