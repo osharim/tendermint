@@ -117,7 +117,9 @@ func (privKey PrivKeyEd25519) Generate(index int) PrivKeyEd25519 {
 	newBytes := crypto.Sha256(bz)
 	newKey := new([64]byte)
 	copy(newKey[:32], newBytes)
-	// Mutates the privkey by placing the pubkey in its latter 32 bytes.
+	// ed25519.MakePublicKey(newKey) alters the last 32 bytes of newKey.
+	// It places the pubkey in the last 32 bytes of newKey, and returns the
+	// public key.
 	ed25519.MakePublicKey(newKey)
 	return PrivKeyEd25519(*newKey)
 }
@@ -126,11 +128,13 @@ func (privKey PrivKeyEd25519) Generate(index int) PrivKeyEd25519 {
 // It uses OS randomness in conjunction with the current global random seed
 // in tendermint/libs/common to generate the private key.
 func GenPrivKeyEd25519() PrivKeyEd25519 {
-	privKeyBytes := new([64]byte)
-	copy(privKeyBytes[:32], crypto.CRandBytes(32))
-	// Mutates the privkey by placing the pubkey in its latter 32 bytes.
-	ed25519.MakePublicKey(privKeyBytes)
-	return PrivKeyEd25519(*privKeyBytes)
+	privKey := new([64]byte)
+	copy(privKey[:32], crypto.CRandBytes(32))
+	// ed25519.MakePublicKey(privKey) alters the last 32 bytes of privKey.
+	// It places the pubkey in the last 32 bytes of privKey, and returns the
+	// public key.
+	ed25519.MakePublicKey(privKey)
+	return PrivKeyEd25519(*privKey)
 }
 
 // GenPrivKeyEd25519FromSecret hashes the secret with SHA2, and uses
@@ -139,11 +143,13 @@ func GenPrivKeyEd25519() PrivKeyEd25519 {
 // if it's derived from user input.
 func GenPrivKeyEd25519FromSecret(secret []byte) PrivKeyEd25519 {
 	privKey32 := crypto.Sha256(secret) // Not Ripemd160 because we want 32 bytes.
-	privKeyBytes := new([64]byte)
-	copy(privKeyBytes[:32], privKey32)
-	// Mutates the privkey by placing the pubkey in its latter 32 bytes.
-	ed25519.MakePublicKey(privKeyBytes)
-	return PrivKeyEd25519(*privKeyBytes)
+	privKey := new([64]byte)
+	copy(privKey[:32], privKey32)
+	// ed25519.MakePublicKey(privKey) alters the last 32 bytes of privKey.
+	// It places the pubkey in the last 32 bytes of privKey, and returns the
+	// public key.
+	ed25519.MakePublicKey(privKey)
+	return PrivKeyEd25519(*privKey)
 }
 
 //-------------------------------------
