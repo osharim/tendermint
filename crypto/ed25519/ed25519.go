@@ -44,10 +44,10 @@ func init() {
 		Ed25519SignatureAminoRoute, nil)
 }
 
-// Implements crypto.PrivKey
+// PrivKeyEd25519 implements crypto.PrivKey.
 type PrivKeyEd25519 [64]byte
 
-// Bytes marshals the privkey using amino encoding
+// Bytes marshals the privkey using amino encoding.
 func (privKey PrivKeyEd25519) Bytes() []byte {
 	return cdc.MustMarshalBinaryBare(privKey)
 }
@@ -59,13 +59,13 @@ func (privKey PrivKeyEd25519) Sign(msg []byte) (crypto.Signature, error) {
 	return SignatureEd25519(*signatureBytes), nil
 }
 
-// PubKey gets the corresponding public key from the private key
+// PubKey gets the corresponding public key from the private key.
 func (privKey PrivKeyEd25519) PubKey() crypto.PubKey {
 	privKeyBytes := [64]byte(privKey)
 	initialized := false
 	// If the latter 32 bytes of the privkey are all zero, compute the pubkey
 	// otherwise privkey is initialized and we can use the cached value inside
-	// of the private key
+	// of the private key.
 	for _, v := range privKeyBytes[32:] {
 		if v != 0 {
 			initialized = true
@@ -94,8 +94,8 @@ func (privKey PrivKeyEd25519) Equals(other crypto.PrivKey) bool {
 
 // ToCurve25519 takes a private key and returns its representation on
 // Curve25519. Curve25519 is birationally equivalent to Edwards25519,
-// which Ed25519 uses internally. This method is for intended use in
-// Diffie Hellman key exchanges. (i.e. X25519)
+// which Ed25519 uses internally. This method is intended for use in
+// an X25519 Diffie Hellman key exchange.
 func (privKey PrivKeyEd25519) ToCurve25519() *[PubKeyEd25519Size]byte {
 	keyCurve25519 := new([32]byte)
 	privKeyBytes := [64]byte(privKey)
@@ -103,10 +103,12 @@ func (privKey PrivKeyEd25519) ToCurve25519() *[PubKeyEd25519Size]byte {
 	return keyCurve25519
 }
 
-// Generate deterministically generates a new priv-key bytes from key.
+// Generate deterministically derives a new priv-key bytes from key.
 // The privkey is generated as Sha256(amino_encode({privkey, index}))
-// Note that we are using the non-standard golang definition for ed25519
-// privkeys that includes the pubkey appended to it
+// Note that we append the public key to the private key, the same way
+// that golang/x/crypto/ed25519 does. See
+// https://github.com/tendermint/ed25519/blob/master/ed25519.go#L39 for
+// further details.
 func (privKey PrivKeyEd25519) Generate(index int) PrivKeyEd25519 {
 	bz := cdc.MustMarshalBinaryBare(struct {
 		PrivKey [64]byte
@@ -115,8 +117,7 @@ func (privKey PrivKeyEd25519) Generate(index int) PrivKeyEd25519 {
 	newBytes := crypto.Sha256(bz)
 	newKey := new([64]byte)
 	copy(newKey[:32], newBytes)
-	// Caches the pubkey in the latter 32 bytes of the privkey
-	// (this is a mutative function)
+	// Mutates the privkey by placing the pubkey in its latter 32 bytes.
 	ed25519.MakePublicKey(newKey)
 	return PrivKeyEd25519(*newKey)
 }
@@ -127,8 +128,7 @@ func (privKey PrivKeyEd25519) Generate(index int) PrivKeyEd25519 {
 func GenPrivKeyEd25519() PrivKeyEd25519 {
 	privKeyBytes := new([64]byte)
 	copy(privKeyBytes[:32], crypto.CRandBytes(32))
-	// Caches the pubkey in the latter 32 bytes of the privkey
-	// (this is a mutative function)
+	// Mutates the privkey by placing the pubkey in its latter 32 bytes.
 	ed25519.MakePublicKey(privKeyBytes)
 	return PrivKeyEd25519(*privKeyBytes)
 }
@@ -141,8 +141,7 @@ func GenPrivKeyEd25519FromSecret(secret []byte) PrivKeyEd25519 {
 	privKey32 := crypto.Sha256(secret) // Not Ripemd160 because we want 32 bytes.
 	privKeyBytes := new([64]byte)
 	copy(privKeyBytes[:32], privKey32)
-	// Caches the pubkey in the latter 32 bytes of the privkey
-	// (this is a mutative function)
+	// Mutates the privkey by placing the pubkey in its latter 32 bytes.
 	ed25519.MakePublicKey(privKeyBytes)
 	return PrivKeyEd25519(*privKeyBytes)
 }
@@ -151,10 +150,10 @@ func GenPrivKeyEd25519FromSecret(secret []byte) PrivKeyEd25519 {
 
 var _ crypto.PubKey = PubKeyEd25519{}
 
-// PubKeyEd25519Size is the number of bytes in an Ed25519 signature
+// PubKeyEd25519Size is the number of bytes in an Ed25519 signature.
 const PubKeyEd25519Size = 32
 
-// PubKeyEd25519 implements crypto.PubKey for the Ed25519 signature scheme
+// PubKeyEd25519 implements crypto.PubKey for the Ed25519 signature scheme.
 type PubKeyEd25519 [PubKeyEd25519Size]byte
 
 // Address is the SHA256-20 of the raw pubkey bytes.
@@ -163,7 +162,6 @@ func (pubKey PubKeyEd25519) Address() crypto.Address {
 }
 
 // Bytes marshals the PubKey using amino encoding.
-// Amino encoding was chosen due its portability
 func (pubKey PubKeyEd25519) Bytes() []byte {
 	bz, err := cdc.MarshalBinaryBare(pubKey)
 	if err != nil {
@@ -185,10 +183,10 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig_ crypto.Signature) bool 
 
 // ToCurve25519 takes a public key and returns its representation on
 // Curve25519. Curve25519 is birationally equivalent to Edwards25519,
-// which Ed25519 uses internally. This method is for intended use in
-// Diffie Hellman key exchanges. (i.e. X25519)
+// which Ed25519 uses internally. This method is intended for use in
+// an X25519 Diffie Hellman key exchange.
 //
-// If there is an error, then this function returns nil
+// If there is an error, then this function returns nil.
 func (pubKey PubKeyEd25519) ToCurve25519() *[PubKeyEd25519Size]byte {
 	keyCurve25519, pubKeyBytes := new([PubKeyEd25519Size]byte), [PubKeyEd25519Size]byte(pubKey)
 	ok := extra25519.PublicKeyToCurve25519(keyCurve25519, &pubKeyBytes)
@@ -215,9 +213,11 @@ func (pubKey PubKeyEd25519) Equals(other crypto.PubKey) bool {
 
 var _ crypto.Signature = SignatureEd25519{}
 
+// Size of an Edwards25519 signature. Namely the size of a compressed
+// Edwards25519 point, and a field element. Both of which are 32 bytes.
 const SignatureEd25519Size = 64
 
-// Implements crypto.Signature
+// SignatureEd25519 implements crypto.Signature
 type SignatureEd25519 [SignatureEd25519Size]byte
 
 func (sig SignatureEd25519) Bytes() []byte {
